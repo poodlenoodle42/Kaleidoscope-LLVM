@@ -1,7 +1,7 @@
 #include <iostream>
-#include "parser.hpp"
-#include "lexer.hpp"
+extern int yyparse();
 int main() {
-    printHelloWorld();
+    yyparse();
+    //std::cout << "Hello World\n";
 }
 
