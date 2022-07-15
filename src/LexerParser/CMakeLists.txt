@@ -17,10 +17,11 @@ ADD_FLEX_BISON_DEPENDENCY(lexer parser)
 add_library(LexerParser STATIC 
             ${FLEX_lexer_OUTPUTS}
             ${BISON_parser_OUTPUTS}
+            ParserDriver.cpp
             )
 
 target_include_directories(LexerParser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(LexerParser PRIVATE 
+target_include_directories(LexerParser PUBLIC 
                             ${FLEX_INCLUDE_DIRS}
                             ${CMAKE_CURRENT_BINARY_DIR}
                             )  

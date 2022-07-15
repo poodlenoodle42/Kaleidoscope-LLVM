@@ -1,7 +1,8 @@
 #include <iostream>
-extern int yyparse();
+#include "ParserDriver.hpp"
 int main() {
-    yyparse();
+    ParserDriver driver;
+    driver.parse("Hello.kal");
     //std::cout << "Hello World\n";
 }
 
