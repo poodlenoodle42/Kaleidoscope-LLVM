@@ -17,7 +17,7 @@
     class ParserDriver;
     namespace yy {class Scanner;}
 }
-%lex-param {yy::Scanner& scanner} //Pass the driver as a parameter to yylex so he can be used in semantic actions
+%lex-param {yy::Scanner& scanner}
 %parse-param {ParserDriver& drv} //Pass the driver as a parameter to yyparse so he can be used in semantic actions
 %parse-param {Scanner& scanner}
 //Good syntax error messages

@@ -10,7 +10,7 @@
 %}
 
 
-%option noyywrap nounput noinput batch debug c++
+%option noyywrap nounput noinput debug c++
 %option yyclass="yy::Scanner"
 %option prefix="yy_"
 
@@ -28,7 +28,7 @@ number      [0-9]
 "def"                   return yy::Parser::make_DEF(loc);
 "extern"                return yy::Parser::make_EXTERN(loc);
 {identifier}            return yy::Parser::make_IDENTIFIER(yytext, loc);
-{number}.?{number}?     return yy::Parser::make_NUMBER(std::stod(yytext), loc);
+{number}*\.?{number}*   return yy::Parser::make_NUMBER(std::stod(yytext), loc);
 "+"                     return yy::Parser::make_ADD(loc);
 "-"                     return yy::Parser::make_MINUS(loc);
 "*"                     return yy::Parser::make_STAR(loc);
@@ -37,5 +37,5 @@ number      [0-9]
 <<EOF>>                 return yy::Parser::make_YYEOF(loc);
 %%
 
-yy::Scanner::Scanner(ParserDriver& driver) : driver(driver), yyFlexLexer(&std::cin) {loc.initialize(&driver.file);}
-yy::Scanner::Scanner(ParserDriver& driver, std::istream& in) : driver(driver), yyFlexLexer(&in) {loc.initialize(&driver.file);} 
+yy::Scanner::Scanner(ParserDriver& driver) : driver(driver), yyFlexLexer(&std::cin) {loc.initialize(&driver.get_file_name());}
+yy::Scanner::Scanner(ParserDriver& driver, std::istream& in) : driver(driver), yyFlexLexer(&in) {loc.initialize(&driver.get_file_name());} 
