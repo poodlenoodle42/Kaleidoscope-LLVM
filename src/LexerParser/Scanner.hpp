@@ -12,6 +12,7 @@
 #define YY_DECL yy::Parser::symbol_type yy::Scanner::get_next_token()
 
 #include "ParserDriver.hpp"
+#include "parser.tab.hpp"
 namespace yy {
 
 class Scanner : yyFlexLexer {

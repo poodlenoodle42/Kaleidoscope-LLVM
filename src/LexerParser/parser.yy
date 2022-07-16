@@ -36,6 +36,10 @@
 %token DEF EXTERN 
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
+%token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "="
+
+%left ADD MINUS
+%left STAR SLASH
 
 %nterm <double> num
 
