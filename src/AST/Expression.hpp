@@ -9,6 +9,7 @@ namespace AST {
         public:
             virtual ~Expr() {}
             virtual void accept(Visitor& vis) = 0;
+        
     };
 
     class NumberExpr : public Expr {
@@ -16,6 +17,7 @@ namespace AST {
         public: 
             NumberExpr(double val) : val(val) {}
             void accept(Visitor& vis) override {vis.visitNumber(*this);}
+            double getVal() const {return val;}
     };
 
     class VariableExpr : public Expr {
@@ -24,23 +26,28 @@ namespace AST {
         public:
             VariableExpr(const std::string& name) : name(std::move(name)) {}
             void accept(Visitor& vis) override {vis.visitVariable(*this);}
+            const std::string& getName() const {return name;}
     };
 
     class BinaryExpr : public Expr {
         char op;
-        std::unique_ptr<Expr> LHS, RHS;
         public:
+            std::unique_ptr<Expr> LHS, RHS;
             BinaryExpr(char op, std::unique_ptr<Expr> LHS, std::unique_ptr<Expr> RHS) : op(op), RHS(std::move(RHS)), LHS(std::move(LHS)) {}
-            void accept(Visitor& vis) override {vis.visitBinary(*this);}   
+            void accept(Visitor& vis) override {vis.visitBinary(*this);} 
+            char getOp() const {return op;}  
     };
 
     class CallExpr : public Expr {
         std::string callee;
-        std::vector<std::unique_ptr<Expr>> args;
+        
         public:
+            std::vector<std::unique_ptr<Expr>> args;
             CallExpr(const std::string& callee, std::vector<std::unique_ptr<Expr>>& args) : callee(std::move(callee)), args(std::move(args)) {}
             void accept(Visitor& vis) override {vis.visitCall(*this);}
-            void add_expr(std::unique_ptr<Expr> expr) {args.push_back(std::move(expr));}
+            void addExpr(std::unique_ptr<Expr> expr) {args.push_back(std::move(expr));}
+            const std::string& getCallee() const {return callee;}
+
     };
 
     class Prototype {
@@ -49,14 +56,18 @@ namespace AST {
         public:
             Prototype(const std::string& name, std::vector<std::string>& args) : name(std::move(name)), args(std::move(args)) {}
             void accept(Visitor& vis) {vis.visitPrototype(*this);}
-            void add_argument(const std::string& arg) {args.push_back(std::move(arg));}
+            void addArgument(const std::string& arg) {args.push_back(std::move(arg));}
+            const std::string& getName() const {return name;}
+            const std::vector<std::string>& getArgs() {return args;}
+
     };
 
     class Function {
         std::unique_ptr<Prototype> proto;
-        std::unique_ptr<Expr> body;
         public:
+            std::unique_ptr<Expr> body;
             Function(std::unique_ptr<Prototype> proto, std::unique_ptr<Expr> expr) : proto(std::move(proto)), body(std::move(expr)) {}
             void accept(Visitor& vis) {vis.visitFunction(*this);}
+            const Prototype* getProto() const {return proto.get();}
     };
 };

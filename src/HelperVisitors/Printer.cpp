@@ -1,0 +1,59 @@
+#include "Printer.hpp"
+#include "Expression.hpp"
+#include <iostream>
+using namespace AST;
+namespace Visitor {
+
+    void Printer::printIndent() {
+        for (int i = 0; i<indentation; i++) {
+            std::cout << "\t";
+        }
+    }
+    #define PRINT_METHOD(stmts) indentation++; printIndent(); stmts indentation--;
+    void Printer::visitNumber(NumberExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[NUMBER: " << expr.getVal() << "]\n";
+        )
+    }
+
+    void Printer::visitVariable(VariableExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[VARIABLE: " << expr.getName() << "]\n"; 
+        )
+    }
+
+    void Printer::visitBinary(BinaryExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[Binary: " << expr.getOp() << "]\n";
+            expr.RHS->accept(*this);
+            expr.LHS->accept(*this);
+        )
+    }
+
+    void Printer::visitCall(CallExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[Call " << expr.getCallee() << "]\n";
+            for(const auto& arg : expr.args) {
+                arg->accept(*this);
+            }
+        )
+    }
+
+    void Printer::visitPrototype(Prototype& proto) {
+        PRINT_METHOD(
+            std::cout << "[Prototype " << proto.getName() << "(";
+            for(const auto& name: proto.getArgs()) {
+                std::cout << name << " ";
+            }
+            std::cout << ")]\n";
+        )
+    }
+
+    void Printer::visitFunction(Function& func) {
+        PRINT_METHOD(
+            std::cout << "[Function]\n";
+            const_cast<AST::Prototype*>(func.getProto())->accept(*this);
+            func.body->accept(*this);
+        )
+    }
+}

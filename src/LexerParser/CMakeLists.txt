@@ -20,8 +20,9 @@ add_library(LexerParser STATIC
             ParserDriver.cpp
             )
 
+target_link_libraries(LexerParser AST)
 target_include_directories(LexerParser PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(LexerParser PUBLIC 
+target_include_directories(LexerParser PRIVATE 
                             ${FLEX_INCLUDE_DIRS}
                             ${CMAKE_CURRENT_BINARY_DIR}
                             )  

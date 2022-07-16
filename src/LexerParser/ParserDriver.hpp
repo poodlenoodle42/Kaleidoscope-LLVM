@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-
+#include "Expression.hpp"
 namespace yy {
     class Parser;
     class Scanner;
@@ -14,6 +14,7 @@ public:
 
     int parse();
     const std::string& get_file_name() const {return file_name;}
+    std::shared_ptr<AST::Expr> get_ast_root() const {return root;}
 
 private:
     yy::Parser* parser;
@@ -21,4 +22,7 @@ private:
 
     std::string file_name;
 
+    std::shared_ptr<AST::Expr> root;
+
+friend class yy::Parser;
 };

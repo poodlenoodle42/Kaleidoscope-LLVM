@@ -4,6 +4,7 @@
 %language "c++" //Well, I mean....
 %locations //Generate Location type for better diagnostics
 %header
+%define api.value.automove //Auto moves values of terminals/nonterminals (e.g. $1), needed for easy use of unique_ptr
 %define api.value.type variant //Use real c++ types as types for terminals and nonterminals, more typesafe than %union
 %define api.token.constructor //Define functions to construct token types, makes tokens type safe  
 %define api.token.raw //Disables conversion between internal and external token numbers, charachter tokens like '+' can not be created anymore
@@ -13,6 +14,11 @@
 %code requires {
     #include <string>
     #include <iostream>
+
+    #include <Expression.hpp>
+    typedef std::unique_ptr<AST::Expr> ExprPtr;
+    typedef std::unique_ptr<AST::Function> FuncPtr;
+    typedef std::unique_ptr<AST::Prototype> ProtoPtr;
 
     class ParserDriver;
     namespace yy {class Scanner;}
@@ -28,6 +34,7 @@
 %code {
     #include "ParserDriver.hpp"
     #include "Scanner.hpp"
+
     static yy::Parser::symbol_type yylex(yy::Scanner& scanner) {
         return scanner.get_next_token();
     }
@@ -37,19 +44,25 @@
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
 %token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "="
-
+%token UNARY //Only used as precedence for unary operators
 %left ADD MINUS
 %left STAR SLASH
+%left UNARY
 
-%nterm <double> num
+%nterm <ExprPtr> num expr
 
 %start program
 %%
 
-program : numbers;
-numbers : numbers num {std::cout << $2 << "\n";}
-        | num {std::cout << $1 << "\n";};
-num : NUMBER {$$ = $1;}; //Semantic action does not need to be explicit because it is the default rule
+program : expr {drv.root = $1;};
+
+expr: expr "+" expr {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
+| expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
+| expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}
+| expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>('/', $1, $3);}
+| "-" expr %prec UNARY {$$ = $2;} //Should introduce negate expression node later
+| num;
+num : NUMBER {$$ = std::make_unique<AST::NumberExpr>($1);}; //Semantic action does not need to be explicit because it is the default rule
 %%
 
 void
