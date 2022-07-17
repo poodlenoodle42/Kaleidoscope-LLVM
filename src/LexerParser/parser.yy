@@ -64,9 +64,9 @@ top_level_list: top_level_list top_level_item
 | %empty;
 
 top_level_item:
-  top_level_expr    {drv.top_level_expressions.push_back($1);}
-| extern    {drv.prototypes.push_back($1);}
-| function  {drv.functions.push_back($1);}
+  top_level_expr    {drv.getAST().addTopLevel($1);}
+| extern    {drv.getAST().addExternalFunction($1);}
+| function  {drv.getAST().addFunction($1);}
 ;
 
 top_level_expr: 
