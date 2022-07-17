@@ -24,7 +24,7 @@ namespace AST {
         std::string name;
 
         public:
-            VariableExpr(const std::string& name) : name(std::move(name)) {}
+            VariableExpr(const std::string&& name) : name(name) {}
             void accept(Visitor& vis) override {vis.visitVariable(*this);}
             const std::string& getName() const {return name;}
     };
@@ -43,7 +43,7 @@ namespace AST {
         
         public:
             std::vector<std::unique_ptr<Expr>> args;
-            CallExpr(const std::string& callee, std::vector<std::unique_ptr<Expr>>& args) : callee(std::move(callee)), args(std::move(args)) {}
+            CallExpr(const std::string&& callee, std::vector<std::unique_ptr<Expr>>&& args) : callee(callee), args(std::move(args)) {}
             void accept(Visitor& vis) override {vis.visitCall(*this);}
             void addExpr(std::unique_ptr<Expr> expr) {args.push_back(std::move(expr));}
             const std::string& getCallee() const {return callee;}
@@ -54,7 +54,7 @@ namespace AST {
         std::string name;
         std::vector<std::string> args;
         public:
-            Prototype(const std::string& name, std::vector<std::string>& args) : name(std::move(name)), args(std::move(args)) {}
+            Prototype(const std::string&& name, std::vector<std::string>&& args) : name(name), args(std::move(args)) {}
             void accept(Visitor& vis) {vis.visitPrototype(*this);}
             void addArgument(const std::string& arg) {args.push_back(std::move(arg));}
             const std::string& getName() const {return name;}

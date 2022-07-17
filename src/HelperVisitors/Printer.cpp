@@ -18,15 +18,15 @@ namespace Visitor {
 
     void Printer::visitVariable(VariableExpr& expr) {
         PRINT_METHOD(
-            std::cout << "[VARIABLE: " << expr.getName() << "]\n"; 
+            std::cout << "[VARIABLE: " << expr.getName() << "]\n";
         )
     }
 
     void Printer::visitBinary(BinaryExpr& expr) {
         PRINT_METHOD(
             std::cout << "[Binary: " << expr.getOp() << "]\n";
-            expr.RHS->accept(*this);
             expr.LHS->accept(*this);
+            expr.RHS->accept(*this);
         )
     }
 

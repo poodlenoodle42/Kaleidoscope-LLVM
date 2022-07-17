@@ -34,6 +34,9 @@ number      [0-9]
 "*"                     return yy::Parser::make_STAR(loc);
 "/"                     return yy::Parser::make_SLASH(loc);
 "="                     return yy::Parser::make_EQUALS(loc);
+"("                     return yy::Parser::make_LPAREN(loc);
+")"                     return yy::Parser::make_RPAREN(loc);
+","                     return yy::Parser::make_COMMA(loc);
 <<EOF>>                 return yy::Parser::make_YYEOF(loc);
 %%
 

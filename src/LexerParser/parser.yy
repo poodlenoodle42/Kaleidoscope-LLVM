@@ -43,26 +43,64 @@
 %token DEF EXTERN 
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
-%token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "="
+%token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA ","
 %token UNARY //Only used as precedence for unary operators
 %left ADD MINUS
 %left STAR SLASH
 %left UNARY
 
-%nterm <ExprPtr> num expr
-
+%nterm <ExprPtr> expr top_level_expr
+%nterm <std::vector<ExprPtr>> arglist
+%nterm <ProtoPtr> prototype extern
+%nterm <std::vector<std::string>> idlist
+%nterm <FuncPtr> function
+%nterm top_level_list top_level_item
 %start program
 %%
 
-program : expr {drv.root = $1;};
+program : top_level_list;
 
-expr: expr "+" expr {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
+top_level_list: top_level_list top_level_item
+| %empty;
+
+top_level_item:
+  top_level_expr    {drv.top_level_expressions.push_back($1);}
+| extern    {drv.prototypes.push_back($1);}
+| function  {drv.functions.push_back($1);}
+;
+
+top_level_expr: 
+  //Allow calls in top level of the program
+  IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
+;
+
+expr: 
+  expr "+" expr {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
 | expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
 | expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}
 | expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>('/', $1, $3);}
+| "(" expr ")"      {$$ = $2;}
 | "-" expr %prec UNARY {$$ = $2;} //Should introduce negate expression node later
-| num;
-num : NUMBER {$$ = std::make_unique<AST::NumberExpr>($1);}; //Semantic action does not need to be explicit because it is the default rule
+| IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>($1);}
+| NUMBER            {$$ = std::make_unique<AST::NumberExpr>($1);}
+| top_level_expr    {$$ = $1;} //Expressions allowed on the top level are of course also allowed anywhere else
+;
+
+prototype: IDENTIFIER "(" idlist ")" {$$ = std::make_unique<AST::Prototype>($1,$3);}
+extern: EXTERN prototype {$$ = $2;}
+function: DEF prototype expr {$$ = std::make_unique<AST::Function>($2,$3);}
+
+idlist:
+  idlist "," IDENTIFIER {auto v = $1; v.push_back($3); $$ = std::move(v);}
+| IDENTIFIER            {$$ = std::vector<std::string>(); $$.push_back($1);}
+| %empty                {$$ = std::vector<std::string>();}
+
+arglist: 
+  arglist "," expr  {auto v = $1; v.push_back($3); $$ = std::move(v);}
+| expr              {$$ = std::vector<std::unique_ptr<AST::Expr>>(); $$.push_back($1);}
+| %empty            {$$ = std::vector<std::unique_ptr<AST::Expr>>();}
+;
+
 %%
 
 void
