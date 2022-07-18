@@ -37,6 +37,7 @@ number      [0-9]
 "("                     return yy::Parser::make_LPAREN(loc);
 ")"                     return yy::Parser::make_RPAREN(loc);
 ","                     return yy::Parser::make_COMMA(loc);
+";"                     return yy::Parser::make_SEMICOLON(loc);
 <<EOF>>                 return yy::Parser::make_YYEOF(loc);
 %%
 

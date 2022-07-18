@@ -3,7 +3,7 @@
 #include "ParserDriver.hpp"
 #include "Printer.hpp"
 #include "CodeGenerator.hpp"
-
+#include "CodeGenerationDriver.hpp"
 int main() {
     std::string file_name = "test.kal";
     std::ifstream file_stream(file_name);
@@ -13,11 +13,16 @@ int main() {
     if (result == 0) {
         Visitor::Printer printer;
         driver.getAST().accept(printer);
-        Visitor::CodeGenerator codeGen;
-        driver.getAST().accept(codeGen);
-        if (!codeGen.hadError()) {
+        try {
+            CodeGenerationDriver codeDriver(driver.getAST());
+            codeDriver.optimize();
             std::cout << "Code Generated\n";
-            codeGen.getModule().print(llvm::errs(), nullptr);
+            codeDriver.getModule().print(llvm::errs(), nullptr);
+            codeDriver.compile("test.kal.o");
+
+        } catch (...) {
+            std::cerr << "There was an error compiling the code. Aborting\n";
+            return 1;
         }
     }
 

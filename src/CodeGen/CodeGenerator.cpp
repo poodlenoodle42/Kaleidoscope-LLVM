@@ -16,10 +16,9 @@
 #define RETURN(stmt) returnValues.push(stmt); return
 
 namespace Visitor {
-    CodeGenerator::CodeGenerator() {
-        llvmContext = std::make_unique<llvm::LLVMContext>();
-        llvmBuilder = std::make_unique<llvm::IRBuilder<>>(*llvmContext);
-        llvmModule = std::make_unique<llvm::Module>("my cool jit", *llvmContext);
+    CodeGenerator::CodeGenerator(llvm::LLVMContext& context) : llvmContext(context) {
+        llvmBuilder = std::make_unique<llvm::IRBuilder<>>(llvmContext);
+        llvmModule = std::make_unique<llvm::Module>("my cool jit", llvmContext);
     }
 
     llvm::Value* CodeGenerator::LogErrorV(const char* str) {
@@ -28,7 +27,7 @@ namespace Visitor {
         return nullptr;
     }
     void CodeGenerator::visitNumber(AST::NumberExpr& number) {
-        RETURN(llvm::ConstantFP::get(*llvmContext, llvm::APFloat(number.getVal())));
+        RETURN(llvm::ConstantFP::get(llvmContext, llvm::APFloat(number.getVal())));
     }
 
     void CodeGenerator::visitVariable(AST::VariableExpr& var) {
@@ -72,8 +71,8 @@ namespace Visitor {
     }
 
     void CodeGenerator::visitPrototype(AST::Prototype& prot) {
-        std::vector<llvm::Type*> argumentTypes(prot.getArgs().size(), llvm::Type::getDoubleTy(*llvmContext));
-        llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getDoubleTy(*llvmContext), argumentTypes, false);
+        std::vector<llvm::Type*> argumentTypes(prot.getArgs().size(), llvm::Type::getDoubleTy(llvmContext));
+        llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvmContext), argumentTypes, false);
         llvm::Function* f = llvm::Function::Create(ft, llvm::Function::ExternalLinkage, prot.getName(), *llvmModule);
 
         unsigned idx = 0;
@@ -88,7 +87,7 @@ namespace Visitor {
         if(!function) {function = codeGen(func.getProto());}
         if(!function) return;
         if(!function->empty()) {LogErrorV("Function can not be redefined."); return;}
-        llvm::BasicBlock* bb = llvm::BasicBlock::Create(*llvmContext, "entry", function);
+        llvm::BasicBlock* bb = llvm::BasicBlock::Create(llvmContext, "entry", function);
         llvmBuilder->SetInsertPoint(bb);
         namedValues.clear();
         for(auto& arg : function->args()) {

@@ -10,7 +10,7 @@ namespace Visitor {
             std::stack<llvm::Value*> returnValues;
             std::map<std::string, llvm::Value*> namedValues;
             std::unique_ptr<llvm::IRBuilder<>> llvmBuilder;
-            std::unique_ptr<llvm::LLVMContext> llvmContext;
+            llvm::LLVMContext& llvmContext;
             std::unique_ptr<llvm::Module> llvmModule;
             bool error = false;
             llvm::Value* LogErrorV(const char* str);
@@ -26,9 +26,10 @@ namespace Visitor {
             void visitFunction(AST::Function& func) override;
 
         public:
-            CodeGenerator();
+            CodeGenerator(llvm::LLVMContext& context);
             inline const llvm::Module& getModule() const {return *llvmModule;}
-            inline const llvm::LLVMContext& getContext() const {return *llvmContext;}
+            inline std::unique_ptr<llvm::Module> consumeModule() {return std::unique_ptr<llvm::Module>(std::move(llvmModule));}
+            inline const llvm::LLVMContext& getContext() const {return llvmContext;}
             inline bool hadError() const {return error;}
 
 

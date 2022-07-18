@@ -43,13 +43,13 @@
 %token DEF EXTERN 
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
-%token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA ","
+%token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA "," SEMICOLON ";"
 %token UNARY //Only used as precedence for unary operators
 %left ADD MINUS
 %left STAR SLASH
 %left UNARY
 
-%nterm <ExprPtr> expr top_level_expr
+%nterm <ExprPtr> expr
 %nterm <std::vector<ExprPtr>> arglist
 %nterm <ProtoPtr> prototype extern
 %nterm <std::vector<std::string>> idlist
@@ -60,30 +60,27 @@
 
 program : top_level_list;
 
-top_level_list: top_level_list top_level_item
+top_level_list: top_level_list top_level_item ";"
 | %empty;
 
 top_level_item:
-  top_level_expr    {drv.getAST().addTopLevel($1);}
+  expr    {drv.getAST().addTopLevel($1);}
 | extern    {drv.getAST().addExternalFunction($1);}
 | function  {drv.getAST().addFunction($1);}
 ;
 
-top_level_expr: 
-  //Allow calls in top level of the program
-  IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
-;
 
 expr: 
   expr "+" expr {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
 | expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
 | expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}
 | expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>('/', $1, $3);}
+| IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
 | "(" expr ")"      {$$ = $2;}
 | "-" expr %prec UNARY {$$ = $2;} //Should introduce negate expression node later
 | IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>($1);}
 | NUMBER            {$$ = std::make_unique<AST::NumberExpr>($1);}
-| top_level_expr    {$$ = $1;} //Expressions allowed on the top level are of course also allowed anywhere else
+//| top_level_expr    {$$ = $1;} //Expressions allowed on the top level are of course also allowed anywhere else
 ;
 
 prototype: IDENTIFIER "(" idlist ")" {$$ = std::make_unique<AST::Prototype>($1,$3);}
