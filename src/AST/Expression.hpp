@@ -68,6 +68,6 @@ namespace AST {
             std::unique_ptr<Expr> body;
             Function(std::unique_ptr<Prototype> proto, std::unique_ptr<Expr> expr) : proto(std::move(proto)), body(std::move(expr)) {}
             void accept(Visitor& vis) {vis.visitFunction(*this);}
-            const Prototype* getProto() const {return proto.get();}
+            const Prototype& getProto() const {return *proto;}
     };
 };

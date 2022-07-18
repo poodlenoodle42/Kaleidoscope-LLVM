@@ -52,7 +52,7 @@ namespace Visitor {
     void Printer::visitFunction(Function& func) {
         PRINT_METHOD(
             std::cout << "[Function]\n";
-            const_cast<AST::Prototype*>(func.getProto())->accept(*this);
+            const_cast<AST::Prototype&>(func.getProto()).accept(*this);
             func.body->accept(*this);
         )
     }

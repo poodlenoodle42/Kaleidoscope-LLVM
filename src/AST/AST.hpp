@@ -8,11 +8,12 @@ typedef std::unique_ptr<AST::Function> FuncPtr;
 namespace AST {
     class AST {
         private:
-            std::vector<ExprPtr> topLevelExpressions;
+            FuncPtr topLevelFunction;
             std::vector<ProtoPtr> externFunctions;
             std::vector<FuncPtr> functions;
         public:
-            void addTopLevel(ExprPtr expr) {topLevelExpressions.push_back(std::move(expr));}
+            AST() : topLevelFunction(new Function(std::make_unique<Prototype>("top_level_expr", std::vector<std::string>()), nullptr)) {}
+            void addTopLevel(ExprPtr expr) {topLevelFunction->body = std::move(expr);}
             void addExternalFunction(ProtoPtr proto) {externFunctions.push_back(std::move(proto));}
             void addFunction(FuncPtr func) {functions.push_back(std::move(func));}
             void accept(Visitor& vis) {
@@ -22,9 +23,7 @@ namespace AST {
                 for(auto& func : functions) {
                     func->accept(vis);
                 }
-                for(auto& expr : topLevelExpressions) {
-                    expr->accept(vis);
-                }
+                topLevelFunction->accept(vis);
             }
 
 
