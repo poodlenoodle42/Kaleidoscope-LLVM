@@ -4,6 +4,7 @@ namespace AST {
     class VariableExpr;
     class BinaryExpr;
     class CallExpr;
+    class IfExpr;
     class Prototype;
     class Function;
     class Visitor {
@@ -14,5 +15,6 @@ namespace AST {
             virtual void visitCall(CallExpr& call) = 0;
             virtual void visitPrototype(Prototype& proto) = 0;
             virtual void visitFunction(Function& func) = 0;
+            virtual void visitIf(IfExpr& ifexpr) = 0;
     };
 }

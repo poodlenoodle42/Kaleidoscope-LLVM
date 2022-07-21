@@ -39,6 +39,21 @@ namespace Visitor {
         )
     }
 
+    void Printer::visitIf(IfExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[if\n";
+            expr.cond->accept(*this);
+            printIndent();
+            std::cout << "then\n";
+            expr.then->accept(*this);
+            printIndent();
+            std::cout << "else\n";
+            expr.Else->accept(*this);
+            printIndent();
+            std::cout << "]\n";
+        )
+    }
+
     void Printer::visitPrototype(Prototype& proto) {
         PRINT_METHOD(
             std::cout << "[Prototype " << proto.getName() << "(";

@@ -51,6 +51,9 @@ namespace Visitor {
                 RETURN(llvmBuilder->CreateFMul(lhs,rhs,"multmp"));
             case '/':
                 RETURN(llvmBuilder->CreateFDiv(lhs,rhs,"divtmp"));
+            case '<':
+                lhs = llvmBuilder->CreateFCmpULT(lhs, rhs, "cmptmp");
+                RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
             default: //Does not happen because node is created in the parser with controlled operators. But if I forget to add a case statement for a new operator ....
                 RETURN(LogErrorV("Unknown binary operator"));
         }
@@ -68,6 +71,40 @@ namespace Visitor {
             if(!argsV.back()) {RETURN(nullptr);}
         }
         RETURN(llvmBuilder->CreateCall(calleeF, argsV, "calltmp"));
+    }
+
+    void CodeGenerator::visitIf(AST::IfExpr& ifexpr) {
+        llvm::Value* condV = codeGen(*ifexpr.cond);
+        if (!condV) {RETURN(nullptr);}
+        condV = llvmBuilder->CreateFCmpONE(condV, llvm::ConstantFP::get(llvmContext, llvm::APFloat(0.0)), "ifcond");
+
+        llvm::Function* function = llvmBuilder->GetInsertBlock()->getParent();
+        llvm::BasicBlock* thenBB = llvm::BasicBlock::Create(llvmContext, "then", function);
+        llvm::BasicBlock* elseBB = llvm::BasicBlock::Create(llvmContext,"else");
+        llvm::BasicBlock* mergeBB = llvm::BasicBlock::Create(llvmContext, "ifcont");
+        llvmBuilder->CreateCondBr(condV, thenBB, elseBB);
+
+        llvmBuilder->SetInsertPoint(thenBB);
+        llvm::Value* thenV = codeGen(*ifexpr.then);
+        if (!thenV) {RETURN(nullptr);}
+
+        llvmBuilder->CreateBr(mergeBB);
+
+        thenBB = llvmBuilder->GetInsertBlock();
+
+        function->getBasicBlockList().push_back(elseBB);
+        llvmBuilder->SetInsertPoint(elseBB);
+        llvm::Value* elseV = codeGen(*ifexpr.Else);
+        llvmBuilder->CreateBr(mergeBB);
+        elseBB = llvmBuilder->GetInsertBlock();
+
+        function->getBasicBlockList().push_back(mergeBB);
+        llvmBuilder->SetInsertPoint(mergeBB);
+        llvm::PHINode* pn = llvmBuilder->CreatePHI(llvm::Type::getDoubleTy(llvmContext), 2, "iftmp");
+        pn->addIncoming(thenV, thenBB);
+        pn->addIncoming(elseV, elseBB);
+        RETURN(pn);
+
     }
 
     void CodeGenerator::visitPrototype(AST::Prototype& prot) {

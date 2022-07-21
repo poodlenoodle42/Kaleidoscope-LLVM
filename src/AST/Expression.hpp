@@ -50,6 +50,13 @@ namespace AST {
 
     };
 
+    class IfExpr : public Expr {
+        public:
+            std::unique_ptr<Expr> cond, then, Else;
+            IfExpr(std::unique_ptr<Expr> cond, std::unique_ptr<Expr> then, std::unique_ptr<Expr> Else) : cond(std::move(cond)), then(std::move(then)), Else(std::move(Else)) {}
+            void accept(Visitor& vis) override {vis.visitIf(*this);}
+    };
+
     class Prototype {
         std::string name;
         std::vector<std::string> args;

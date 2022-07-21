@@ -27,6 +27,9 @@ number      [0-9]
 \n+     loc.lines(yyleng); loc.step();
 "def"                   return yy::Parser::make_DEF(loc);
 "extern"                return yy::Parser::make_EXTERN(loc);
+"if"                    return yy::Parser::make_IF(loc);
+"then"                  return yy::Parser::make_THEN(loc);
+"else"                  return yy::Parser::make_ELSE(loc);
 {identifier}            return yy::Parser::make_IDENTIFIER(yytext, loc);
 {number}*\.?{number}*   return yy::Parser::make_NUMBER(std::stod(yytext), loc);
 "+"                     return yy::Parser::make_ADD(loc);
@@ -38,6 +41,7 @@ number      [0-9]
 ")"                     return yy::Parser::make_RPAREN(loc);
 ","                     return yy::Parser::make_COMMA(loc);
 ";"                     return yy::Parser::make_SEMICOLON(loc);
+"<"                     return yy::Parser::make_LESS(loc);
 <<EOF>>                 return yy::Parser::make_YYEOF(loc);
 %%
 

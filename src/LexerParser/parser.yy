@@ -44,6 +44,8 @@
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
 %token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA "," SEMICOLON ";"
+%token LESS "<"
+%token IF "if" THEN "then" ELSE "else"
 %token UNARY //Only used as precedence for unary operators
 %left ADD MINUS
 %left STAR SLASH
@@ -70,11 +72,13 @@ top_level_item:
 ;
 
 
-expr: 
-  expr "+" expr {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
+expr:
+  "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>($2,$4, $6);}
+| expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
 | expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
 | expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}
 | expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>('/', $1, $3);}
+| expr "<" expr     {$$ = std::make_unique<AST::BinaryExpr>('<', $1, $3);}
 | IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
 | "(" expr ")"      {$$ = $2;}
 | "-" expr %prec UNARY {$$ = $2;} //Should introduce negate expression node later
