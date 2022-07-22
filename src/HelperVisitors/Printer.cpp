@@ -30,6 +30,13 @@ namespace Visitor {
         )
     }
 
+    void Printer::visitAssign(AssignExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[Assign: " << expr.getTarget() << "]\n";
+            expr.value->accept(*this);
+        )
+    }
+
     void Printer::visitUnary(UnaryExpr& expr) {
         PRINT_METHOD(
             std::cout << "[Unary: " << expr.getOp() << "]\n";

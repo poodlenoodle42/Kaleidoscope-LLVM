@@ -53,6 +53,15 @@ namespace AST {
             Type getOp() const {return op;}  
     };
 
+    class AssignExpr : public Expr {
+        std::string target;
+        public:
+            std::unique_ptr<Expr> value;
+            AssignExpr(const std::string& target, std::unique_ptr<Expr> value)
+                : target(std::move(target)), value(std::move(value)) {}
+            void accept(Visitor& vis) override {vis.visitAssign(*this);}
+            const std::string& getTarget() const {return target;}
+    };
 
     class UnaryExpr : public Expr {
         public: 

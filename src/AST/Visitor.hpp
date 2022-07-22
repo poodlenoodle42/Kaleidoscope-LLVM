@@ -3,6 +3,7 @@ namespace AST {
     class NumberExpr;
     class VariableExpr;
     class BinaryExpr;
+    class AssignExpr;
     class UnaryExpr;
     class CallExpr;
     class IfExpr;
@@ -14,6 +15,7 @@ namespace AST {
             virtual void visitNumber(NumberExpr& num) = 0;
             virtual void visitVariable(VariableExpr& var) = 0;
             virtual void visitBinary(BinaryExpr& bin) = 0;
+            virtual void visitAssign(AssignExpr& assign) = 0;
             virtual void visitUnary(UnaryExpr& unary) = 0;
             virtual void visitCall(CallExpr& call) = 0;
             virtual void visitPrototype(Prototype& proto) = 0;

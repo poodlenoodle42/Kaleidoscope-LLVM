@@ -33,7 +33,7 @@ namespace Visitor {
     void CodeGenerator::visitVariable(AST::VariableExpr& var) {
         llvm::Value* v = namedValues[var.getName()];
         if (!v) {LogErrorV("Unknown variable name");}
-        RETURN(v);
+        RETURN(llvmBuilder->CreateLoad(llvm::Type::getDoubleTy(llvmContext),v, var.getName().c_str()));
     }
 
     void CodeGenerator::visitBinary(AST::BinaryExpr& binary) {
@@ -75,6 +75,16 @@ namespace Visitor {
             default: //Does not happen because node is created in the parser with controlled operators. But if I forget to add a case statement for a new operator ....
                 RETURN(LogErrorV("Unknown binary operator"));
         }
+    }
+
+    void CodeGenerator::visitAssign(AST::AssignExpr& assign) {
+        llvm::Value* val = codeGen(*assign.value);
+        if (!val) {RETURN(nullptr);}
+        llvm::Value* variable = namedValues[assign.getTarget()];
+        if (!variable) {RETURN(LogErrorV("Unknown variable name"));}
+        llvmBuilder->CreateStore(val, variable);
+        RETURN(val);
+
     }
 
     void CodeGenerator::visitUnary(AST::UnaryExpr& unary) {
@@ -140,18 +150,21 @@ namespace Visitor {
     }
 
     void CodeGenerator::visitFor(AST::ForExpr& forexpr) {
+        llvm::Function* function = llvmBuilder->GetInsertBlock()->getParent();
+        llvm::AllocaInst* alloca = createEntryBlockAlloca(function, forexpr.getVarName());
         llvm::Value* startVal = codeGen(*forexpr.start);
         if (!startVal) {RETURN(nullptr);}
-        llvm::Function* function = llvmBuilder->GetInsertBlock()->getParent();
+        
+        llvmBuilder->CreateStore(startVal, alloca);
+
+
         llvm::BasicBlock* preheaderBB = llvmBuilder->GetInsertBlock();
         llvm::BasicBlock* loopBB = llvm::BasicBlock::Create(llvmContext, "loop", function);
         llvmBuilder->CreateBr(loopBB);
         llvmBuilder->SetInsertPoint(loopBB);
         
-        llvm::PHINode* loopVariable = llvmBuilder->CreatePHI(llvm::Type::getDoubleTy(llvmContext), 2, forexpr.getVarName().c_str());
-        loopVariable->addIncoming(startVal, preheaderBB);
-        llvm::Value* oldVal = namedValues[forexpr.getVarName()];
-        namedValues[forexpr.getVarName()] = loopVariable;
+        llvm::AllocaInst* oldVal = namedValues[forexpr.getVarName()];
+        namedValues[forexpr.getVarName()] = alloca;
         if (!codeGen(*forexpr.body)) {RETURN(nullptr);}
         llvm::Value* stepVal = nullptr;
         if (forexpr.step) {
@@ -160,18 +173,20 @@ namespace Visitor {
         } else {
             stepVal = llvm::ConstantFP::get(llvmContext, llvm::APFloat(1.0));
         }
-        llvm::Value* nextVar = llvmBuilder->CreateFAdd(loopVariable, stepVal, "nextvar");
 
         llvm::Value* endCond = codeGen(*forexpr.end);
         if (!endCond) {RETURN(nullptr);}
         endCond = llvmBuilder->CreateFCmpONE(endCond, llvm::ConstantFP::get(llvmContext, llvm::APFloat(0.0)), "loopcond");
 
-        llvm::BasicBlock* loopEndBB = llvmBuilder->GetInsertBlock();
+        llvm::Value* curVar = llvmBuilder->CreateLoad(llvm::Type::getDoubleTy(llvmContext),alloca);
+        llvm::Value* nextVar = llvmBuilder->CreateFAdd(curVar, stepVal, "nextvar");
+        llvmBuilder->CreateStore(nextVar, alloca);
+
         llvm::BasicBlock* afterBB = llvm::BasicBlock::Create(llvmContext, "afterloop", function);
         llvmBuilder->CreateCondBr(endCond, loopBB, afterBB);
         llvmBuilder->SetInsertPoint(afterBB);
 
-        loopVariable->addIncoming(nextVar,loopEndBB);
+        
 
         if (oldVal) namedValues[forexpr.getVarName()] = oldVal;
         else namedValues.erase(forexpr.getVarName());
@@ -202,7 +217,9 @@ namespace Visitor {
         llvmBuilder->SetInsertPoint(bb);
         namedValues.clear();
         for(auto& arg : function->args()) {
-            namedValues[std::string(arg.getName())] = &arg;
+            llvm::AllocaInst* alloca = createEntryBlockAlloca(function, arg.getName().str());
+            llvmBuilder->CreateStore(&arg, alloca);
+            namedValues[arg.getName().str()] = alloca;
         }
         if(llvm::Value* retVal = codeGen(*func.body)) {
             llvmBuilder->CreateRet(retVal);

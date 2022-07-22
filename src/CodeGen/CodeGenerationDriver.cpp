@@ -4,6 +4,7 @@
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
+#include "llvm/Transforms/Utils.h"
 
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/FileSystem.h"
@@ -30,6 +31,7 @@ CodeGenerationDriver::CodeGenerationDriver(const AST::AST& ast) {
     }
     moduleToCompile = codeGen.consumeModule();
     passManager = std::make_unique<llvm::legacy::PassManager>();
+    passManager->add(llvm::createPromoteMemoryToRegisterPass());
     passManager->add(llvm::createInstructionCombiningPass());
     passManager->add(llvm::createReassociatePass());
     passManager->add(llvm::createGVNPass());

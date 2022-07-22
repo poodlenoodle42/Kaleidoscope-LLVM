@@ -50,6 +50,7 @@
 
 %precedence IN ELSE
 %left DOUBLEPOINT
+%right EQUALS
 %left OR AND
 %left LESS GREATER EQUALEQUAL
 %left ADD MINUS
@@ -94,6 +95,7 @@ expr:
 | expr ":" expr     {{$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::RET_RIGHT, $1, $3);}}
 | "-" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NEGATE, $2);} //Should introduce negate expression node later
 | "!" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NOT, $2);}
+| IDENTIFIER "=" expr  {$$ = std::make_unique<AST::AssignExpr>($1, $3);}
 | IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
 | "(" expr ")"      {$$ = $2;}
 | IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>($1);}
