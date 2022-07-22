@@ -44,12 +44,14 @@
 %token <std::string> IDENTIFIER
 %token <double> NUMBER
 %token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA "," SEMICOLON ";"
-%token LESS "<"
+%token LESS "<" GREATER ">" NOT "!" OR "|" AND "&" EQUALEQUAL "==" DOUBLEPOINT ":"
 %token IF "if" THEN "then" ELSE "else" FOR "for" IN "in"
 %token UNARY //Only used as precedence for unary operators
 
 %precedence IN ELSE
-%left LESS
+%left DOUBLEPOINT
+%left OR AND
+%left LESS GREATER EQUALEQUAL
 %left ADD MINUS
 %left STAR SLASH
 %left UNARY
@@ -80,14 +82,20 @@ expr:
   "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>($2,$4, $6);}
 | "for" IDENTIFIER "=" expr "," expr "in" expr          {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, nullptr, $8);}
 | "for" IDENTIFIER "=" expr "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, $8, $10);}
-| expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
-| expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
-| expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}
-| expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>('/', $1, $3);}
-| expr "<" expr     {$$ = std::make_unique<AST::BinaryExpr>('<', $1, $3);}
+| expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::PLUS, $1, $3);}
+| expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MINUS, $1, $3);}
+| expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MULT, $1, $3);}
+| expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::DIV, $1, $3);}
+| expr "<" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::LESS, $1, $3);}
+| expr ">" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::GREATER, $1, $3);}
+| expr "|" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::OR, $1, $3);}
+| expr "&" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::AND, $1, $3);}
+| expr "==" expr    {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::EQUALS, $1, $3);}
+| expr ":" expr     {{$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::RET_RIGHT, $1, $3);}}
+| "-" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NEGATE, $2);} //Should introduce negate expression node later
+| "!" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NOT, $2);}
 | IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
 | "(" expr ")"      {$$ = $2;}
-| "-" expr %prec UNARY {$$ = $2;} //Should introduce negate expression node later
 | IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>($1);}
 | NUMBER            {$$ = std::make_unique<AST::NumberExpr>($1);}
 //| top_level_expr    {$$ = $1;} //Expressions allowed on the top level are of course also allowed anywhere else
@@ -98,8 +106,8 @@ extern: EXTERN prototype {$$ = $2;}
 function: DEF prototype expr {$$ = std::make_unique<AST::Function>($2,$3);}
 
 idlist:
-  idlist "," IDENTIFIER {auto v = $1; v.push_back($3); $$ = std::move(v);}
-| IDENTIFIER            {$$ = std::vector<std::string>(); $$.push_back($1);}
+  idlist IDENTIFIER {auto v = $1; v.push_back($2); $$ = std::move(v);}
+//| IDENTIFIER            {$$ = std::vector<std::string>(); $$.push_back($1);}
 | %empty                {$$ = std::vector<std::string>();}
 
 arglist: 

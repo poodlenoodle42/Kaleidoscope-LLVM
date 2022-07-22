@@ -39,11 +39,16 @@ number      [0-9]
 "*"                     return yy::Parser::make_STAR(loc);
 "/"                     return yy::Parser::make_SLASH(loc);
 "="                     return yy::Parser::make_EQUALS(loc);
+"=="                    return yy::Parser::make_EQUALEQUAL(loc);
 "("                     return yy::Parser::make_LPAREN(loc);
 ")"                     return yy::Parser::make_RPAREN(loc);
 ","                     return yy::Parser::make_COMMA(loc);
 ";"                     return yy::Parser::make_SEMICOLON(loc);
 "<"                     return yy::Parser::make_LESS(loc);
+">"                     return yy::Parser::make_GREATER(loc);
+"|"                     return yy::Parser::make_OR(loc);
+"&"                     return yy::Parser::make_AND(loc);
+":"                     return yy::Parser::make_DOUBLEPOINT(loc);
 <<EOF>>                 return yy::Parser::make_YYEOF(loc);
 %%
 

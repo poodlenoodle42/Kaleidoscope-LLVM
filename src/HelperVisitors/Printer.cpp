@@ -30,6 +30,13 @@ namespace Visitor {
         )
     }
 
+    void Printer::visitUnary(UnaryExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[Unary: " << expr.getOp() << "]\n";
+            expr.expr->accept(*this);
+        )
+    }
+
     void Printer::visitCall(CallExpr& expr) {
         PRINT_METHOD(
             std::cout << "[Call " << expr.getCallee() << "]\n";

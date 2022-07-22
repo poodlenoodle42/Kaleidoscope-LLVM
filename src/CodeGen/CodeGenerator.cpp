@@ -43,19 +43,51 @@ namespace Visitor {
             RETURN(nullptr);
         }
         switch(binary.getOp()) {
-            case '+':
+            case AST::BinaryExpr::Type::PLUS:
                 RETURN(llvmBuilder->CreateFAdd(lhs,rhs,"addtmp"));
-            case '-':
+            case AST::BinaryExpr::Type::MINUS:
                 RETURN(llvmBuilder->CreateFSub(lhs,rhs,"subtmp"));
-            case '*': 
+            case AST::BinaryExpr::Type::MULT: 
                 RETURN(llvmBuilder->CreateFMul(lhs,rhs,"multmp"));
-            case '/':
+            case AST::BinaryExpr::Type::DIV:
                 RETURN(llvmBuilder->CreateFDiv(lhs,rhs,"divtmp"));
-            case '<':
-                lhs = llvmBuilder->CreateFCmpULT(lhs, rhs, "cmptmp");
+            case AST::BinaryExpr::Type::LESS:
+                lhs = llvmBuilder->CreateFCmpULT(lhs, rhs, "lesstmp");
                 RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
+            case AST::BinaryExpr::Type::GREATER:
+                lhs = llvmBuilder->CreateFCmpUGT(lhs,rhs, "greatertmp");
+                RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
+            case AST::BinaryExpr::Type::EQUALS:
+                lhs = llvmBuilder->CreateFCmpUGT(lhs,rhs, "equalstmp");
+                RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
+            case AST::BinaryExpr::Type::OR:
+                lhs = llvmBuilder->CreateFPToUI(lhs, llvm::Type::getInt1Ty(llvmContext), "lhs");
+                rhs = llvmBuilder->CreateFPToUI(rhs, llvm::Type::getInt1Ty(llvmContext), "rhs");
+                lhs = llvmBuilder->CreateOr(lhs, rhs, "ortmp");
+                RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
+            case AST::BinaryExpr::Type::AND:
+                lhs = llvmBuilder->CreateFPToUI(lhs, llvm::Type::getInt1Ty(llvmContext), "lhs");
+                rhs = llvmBuilder->CreateFPToUI(rhs, llvm::Type::getInt1Ty(llvmContext), "rhs");
+                lhs = llvmBuilder->CreateAnd(lhs, rhs, "andtmp");
+                RETURN(llvmBuilder->CreateUIToFP(lhs, llvm::Type::getDoubleTy(llvmContext)));
+            case AST::BinaryExpr::Type::RET_RIGHT:
+                RETURN(rhs); //Evaluate both but return value of right expression
             default: //Does not happen because node is created in the parser with controlled operators. But if I forget to add a case statement for a new operator ....
                 RETURN(LogErrorV("Unknown binary operator"));
+        }
+    }
+
+    void CodeGenerator::visitUnary(AST::UnaryExpr& unary) {
+        llvm::Value* expr = codeGen(*unary.expr);
+        switch (unary.getOp()) {
+            case AST::UnaryExpr::Type::NEGATE:
+                RETURN(llvmBuilder->CreateFNeg(expr, "negtmp"));
+            case AST::UnaryExpr::Type::NOT:
+                expr = llvmBuilder->CreateFPToUI(expr, llvm::Type::getInt1Ty(llvmContext), "notbool");
+                expr = llvmBuilder->CreateNot(expr, "notboolNegated");
+                RETURN(llvmBuilder->CreateUIToFP(expr, llvm::Type::getDoubleTy(llvmContext)));
+            default:
+                RETURN(LogErrorV("Unknown unary operator"));
         }
     }
 

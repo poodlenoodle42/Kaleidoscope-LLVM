@@ -2,6 +2,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <iostream>
 #include "Visitor.hpp"
 namespace AST {
 
@@ -30,12 +31,42 @@ namespace AST {
     };
 
     class BinaryExpr : public Expr {
-        char op;
+        public:
+            enum class Type {
+                PLUS,
+                MINUS,
+                MULT,
+                DIV,
+                LESS,
+                GREATER,
+                OR,
+                AND,
+                EQUALS,
+                RET_RIGHT
+            };
+        private:
+            Type op;
         public:
             std::unique_ptr<Expr> LHS, RHS;
-            BinaryExpr(char op, std::unique_ptr<Expr> LHS, std::unique_ptr<Expr> RHS) : op(op), RHS(std::move(RHS)), LHS(std::move(LHS)) {}
+            BinaryExpr(Type op, std::unique_ptr<Expr> LHS, std::unique_ptr<Expr> RHS) : op(op), RHS(std::move(RHS)), LHS(std::move(LHS)) {}
             void accept(Visitor& vis) override {vis.visitBinary(*this);} 
-            char getOp() const {return op;}  
+            Type getOp() const {return op;}  
+    };
+
+
+    class UnaryExpr : public Expr {
+        public: 
+            enum class Type {
+                NOT,
+                NEGATE
+            };
+        private:
+            Type op;
+        public:
+            std::unique_ptr<Expr> expr;
+            UnaryExpr(Type op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {}
+            void accept(Visitor& vis) override {vis.visitUnary(*this);}
+            Type getOp() const {return op;}
     };
 
     class CallExpr : public Expr {
@@ -89,3 +120,51 @@ namespace AST {
             const Prototype& getProto() const {return *proto;}
     };
 };
+
+inline std::ostream& operator<<(std::ostream& stream, const AST::BinaryExpr::Type type) {
+    switch (type) {
+        case AST::BinaryExpr::Type::PLUS:
+            stream << "+";
+            break;
+        case AST::BinaryExpr::Type::MINUS:
+            stream << "-";
+            break;
+        case AST::BinaryExpr::Type::MULT:
+            stream << "*";
+            break;
+        case AST::BinaryExpr::Type::DIV:
+            stream << "/";
+            break;
+        case AST::BinaryExpr::Type::LESS:
+            stream << "<";
+            break;
+        case AST::BinaryExpr::Type::GREATER:
+            stream << ">";
+            break;
+        case AST::BinaryExpr::Type::OR:
+            stream << "|";
+            break;
+        case AST::BinaryExpr::Type::AND:
+            stream << "&";
+            break;
+        case AST::BinaryExpr::Type::EQUALS:
+            stream << "==";
+            break;
+        case AST::BinaryExpr::Type::RET_RIGHT:
+            stream << ":";
+            break;
+    }
+    return stream;
+}
+
+inline std::ostream& operator<<(std::ostream& stream, const AST::UnaryExpr::Type type) {
+    switch (type) {
+        case AST::UnaryExpr::Type::NEGATE:
+            stream << "-";
+            break;
+        case AST::UnaryExpr::Type::NOT:
+            stream << "!";
+            break;
+    }
+    return stream;
+}

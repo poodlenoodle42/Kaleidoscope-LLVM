@@ -9,6 +9,7 @@ namespace Visitor {
             void visitNumber(AST::NumberExpr& num) override;
             void visitVariable(AST::VariableExpr& var) override;
             void visitBinary(AST::BinaryExpr& bin) override;
+            void visitUnary(AST::UnaryExpr& unary) override;
             void visitCall(AST::CallExpr& call) override;
             void visitPrototype(AST::Prototype& proto) override;
             void visitFunction(AST::Function& func) override;
