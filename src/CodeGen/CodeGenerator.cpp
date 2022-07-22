@@ -101,6 +101,38 @@ namespace Visitor {
         }
     }
 
+    void CodeGenerator::visitVarInit(AST::VarInitExpr& varInit) {
+        std::vector<llvm::AllocaInst*> oldBindings;
+
+        llvm::Function* function = llvmBuilder->GetInsertBlock()->getParent();
+
+        for(unsigned i = 0, e = varInit.varNames.size(); i != e; ++i) {
+            const std::string& varName = varInit.varNames[i].first;
+            AST::Expr* init = varInit.varNames[i].second.get();
+
+            llvm::Value* initValue;
+            if (init) {
+                initValue = codeGen(*init);
+                if (!initValue) {RETURN(nullptr);}
+            } else {
+                initValue = llvm::ConstantFP::get(llvmContext, llvm::APFloat(0.0));
+            }
+
+            llvm::AllocaInst* alloca = createEntryBlockAlloca(function, varName);
+            llvmBuilder->CreateStore(initValue, alloca);
+            oldBindings.push_back(namedValues[varName]);
+            namedValues[varName] = alloca;
+        }
+
+        llvm::Value* bodyVal = codeGen(*varInit.body);
+        if (!bodyVal) {RETURN(nullptr);}
+
+        for (unsigned i = 0, e = varInit.varNames.size(); i != e; ++i) {
+            namedValues[varInit.varNames[i].first] = oldBindings[i];
+        }
+        RETURN(bodyVal);
+    }
+
     void CodeGenerator::visitCall(AST::CallExpr& call) {
         llvm::Function* calleeF = llvmModule->getFunction(call.getCallee());
         if(!calleeF) {RETURN(LogErrorV("Unknown function referenced"));}

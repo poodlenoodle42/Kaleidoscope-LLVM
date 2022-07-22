@@ -44,6 +44,23 @@ namespace Visitor {
         )
     }
 
+    void Printer::visitVarInit(VarInitExpr& varInit) {
+        PRINT_METHOD(
+            std::cout << "[VarInit\n";
+            printIndent();
+            for (const auto& variable : varInit.varNames) {
+                std::cout << "Init " << variable.first;
+                if (variable.second.get() == nullptr) {
+                    std::cout << "\n";
+                } else {
+                    std::cout << " with\n";
+                    variable.second->accept(*this);
+                }
+                printIndent();
+            }
+        )
+    }
+
     void Printer::visitCall(CallExpr& expr) {
         PRINT_METHOD(
             std::cout << "[Call " << expr.getCallee() << "]\n";

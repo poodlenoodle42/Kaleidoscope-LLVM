@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <iostream>
+#include <utility>
 #include "Visitor.hpp"
 namespace AST {
 
@@ -76,6 +77,15 @@ namespace AST {
             UnaryExpr(Type op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {}
             void accept(Visitor& vis) override {vis.visitUnary(*this);}
             Type getOp() const {return op;}
+    };
+
+    class VarInitExpr : public Expr {
+        public:
+            std::vector<std::pair<std::string, std::unique_ptr<Expr>>> varNames;
+            std::unique_ptr<Expr> body;
+            VarInitExpr(std::vector<std::pair<std::string, std::unique_ptr<Expr>>> varNames, std::unique_ptr<Expr> body) 
+                : varNames(std::move(varNames)), body(std::move(body)) {}
+            void accept(Visitor& vis) {vis.visitVarInit(*this);}
     };
 
     class CallExpr : public Expr {

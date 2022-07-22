@@ -34,6 +34,7 @@
 %code {
     #include "ParserDriver.hpp"
     #include "Scanner.hpp"
+    #include <utility>
 
     static yy::Parser::symbol_type yylex(yy::Scanner& scanner) {
         return scanner.get_next_token();
@@ -45,7 +46,7 @@
 %token <double> NUMBER
 %token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA "," SEMICOLON ";"
 %token LESS "<" GREATER ">" NOT "!" OR "|" AND "&" EQUALEQUAL "==" DOUBLEPOINT ":"
-%token IF "if" THEN "then" ELSE "else" FOR "for" IN "in"
+%token IF "if" THEN "then" ELSE "else" FOR "for" IN "in" VAR "var"
 %token UNARY //Only used as precedence for unary operators
 
 %precedence IN ELSE
@@ -63,6 +64,8 @@
 %nterm <ProtoPtr> prototype extern
 %nterm <std::vector<std::string>> idlist
 %nterm <FuncPtr> function
+%nterm <std::vector<std::pair<std::string, ExprPtr>>> varList
+%nterm <std::pair<std::string, ExprPtr>> varListItem
 %nterm top_level_list top_level_item
 %start program
 %%
@@ -83,6 +86,7 @@ expr:
   "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>($2,$4, $6);}
 | "for" IDENTIFIER "=" expr "," expr "in" expr          {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, nullptr, $8);}
 | "for" IDENTIFIER "=" expr "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, $8, $10);}
+| "var" varList "in" expr {$$ = std::make_unique<AST::VarInitExpr>($2,$4);}                           
 | expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::PLUS, $1, $3);}
 | expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MINUS, $1, $3);}
 | expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MULT, $1, $3);}
@@ -111,13 +115,22 @@ idlist:
   idlist IDENTIFIER {auto v = $1; v.push_back($2); $$ = std::move(v);}
 //| IDENTIFIER            {$$ = std::vector<std::string>(); $$.push_back($1);}
 | %empty                {$$ = std::vector<std::string>();}
-
+;
 arglist: 
   arglist "," expr  {auto v = $1; v.push_back($3); $$ = std::move(v);}
 | expr              {$$ = std::vector<std::unique_ptr<AST::Expr>>(); $$.push_back($1);}
 | %empty            {$$ = std::vector<std::unique_ptr<AST::Expr>>();}
 ;
 
+varList: 
+  varList "," varListItem {auto v = $1; v.push_back($3); $$ = std::move(v);}
+| varListItem             {$$ = std::vector<std::pair<std::string, ExprPtr>>(); $$.push_back($1);}
+;
+
+varListItem:
+  IDENTIFIER "=" expr     {$$ = std::pair<std::string, ExprPtr>($1,$3);}
+| IDENTIFIER              {$$ = std::pair<std::string, ExprPtr>($1,nullptr);}
+;
 %%
 
 void

@@ -27,6 +27,7 @@ namespace Visitor {
             void visitBinary(AST::BinaryExpr& bin) override;
             void visitAssign(AST::AssignExpr& assign) override;
             void visitUnary(AST::UnaryExpr& unary) override;
+            void visitVarInit(AST::VarInitExpr& varInit) override;
             void visitCall(AST::CallExpr& call) override;
             void visitPrototype(AST::Prototype& proto) override;
             void visitFunction(AST::Function& func) override;
