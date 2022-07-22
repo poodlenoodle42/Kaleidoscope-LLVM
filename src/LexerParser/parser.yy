@@ -45,11 +45,15 @@
 %token <double> NUMBER
 %token ADD "+" MINUS "-" STAR "*" SLASH "/" EQUALS "=" LPAREN "(" RPAREN ")" COMMA "," SEMICOLON ";"
 %token LESS "<"
-%token IF "if" THEN "then" ELSE "else"
+%token IF "if" THEN "then" ELSE "else" FOR "for" IN "in"
 %token UNARY //Only used as precedence for unary operators
+
+%precedence IN ELSE
+%left LESS
 %left ADD MINUS
 %left STAR SLASH
 %left UNARY
+
 
 %nterm <ExprPtr> expr
 %nterm <std::vector<ExprPtr>> arglist
@@ -74,6 +78,8 @@ top_level_item:
 
 expr:
   "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>($2,$4, $6);}
+| "for" IDENTIFIER "=" expr "," expr "in" expr          {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, nullptr, $8);}
+| "for" IDENTIFIER "=" expr "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, $8, $10);}
 | expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>('+', $1, $3);}
 | expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>('-', $1, $3);}
 | expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>('*', $1, $3);}

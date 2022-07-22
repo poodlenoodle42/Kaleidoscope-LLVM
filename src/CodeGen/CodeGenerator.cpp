@@ -107,6 +107,48 @@ namespace Visitor {
 
     }
 
+    void CodeGenerator::visitFor(AST::ForExpr& forexpr) {
+        llvm::Value* startVal = codeGen(*forexpr.start);
+        if (!startVal) {RETURN(nullptr);}
+        llvm::Function* function = llvmBuilder->GetInsertBlock()->getParent();
+        llvm::BasicBlock* preheaderBB = llvmBuilder->GetInsertBlock();
+        llvm::BasicBlock* loopBB = llvm::BasicBlock::Create(llvmContext, "loop", function);
+        llvmBuilder->CreateBr(loopBB);
+        llvmBuilder->SetInsertPoint(loopBB);
+        
+        llvm::PHINode* loopVariable = llvmBuilder->CreatePHI(llvm::Type::getDoubleTy(llvmContext), 2, forexpr.getVarName().c_str());
+        loopVariable->addIncoming(startVal, preheaderBB);
+        llvm::Value* oldVal = namedValues[forexpr.getVarName()];
+        namedValues[forexpr.getVarName()] = loopVariable;
+        if (!codeGen(*forexpr.body)) {RETURN(nullptr);}
+        llvm::Value* stepVal = nullptr;
+        if (forexpr.step) {
+            stepVal = codeGen(*forexpr.step);
+            if (!stepVal) {RETURN(nullptr);}
+        } else {
+            stepVal = llvm::ConstantFP::get(llvmContext, llvm::APFloat(1.0));
+        }
+        llvm::Value* nextVar = llvmBuilder->CreateFAdd(loopVariable, stepVal, "nextvar");
+
+        llvm::Value* endCond = codeGen(*forexpr.end);
+        if (!endCond) {RETURN(nullptr);}
+        endCond = llvmBuilder->CreateFCmpONE(endCond, llvm::ConstantFP::get(llvmContext, llvm::APFloat(0.0)), "loopcond");
+
+        llvm::BasicBlock* loopEndBB = llvmBuilder->GetInsertBlock();
+        llvm::BasicBlock* afterBB = llvm::BasicBlock::Create(llvmContext, "afterloop", function);
+        llvmBuilder->CreateCondBr(endCond, loopBB, afterBB);
+        llvmBuilder->SetInsertPoint(afterBB);
+
+        loopVariable->addIncoming(nextVar,loopEndBB);
+
+        if (oldVal) namedValues[forexpr.getVarName()] = oldVal;
+        else namedValues.erase(forexpr.getVarName());
+
+        return RETURN(llvm::Constant::getNullValue(llvm::Type::getDoubleTy(llvmContext)));
+
+
+    }
+
     void CodeGenerator::visitPrototype(AST::Prototype& prot) {
         std::vector<llvm::Type*> argumentTypes(prot.getArgs().size(), llvm::Type::getDoubleTy(llvmContext));
         llvm::FunctionType* ft = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvmContext), argumentTypes, false);
@@ -132,7 +174,7 @@ namespace Visitor {
         }
         if(llvm::Value* retVal = codeGen(*func.body)) {
             llvmBuilder->CreateRet(retVal);
-            llvm::verifyFunction(*function);
+            error = llvm::verifyFunction(*function);
             return;
             //RETURN(function);
         }

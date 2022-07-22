@@ -57,6 +57,17 @@ namespace AST {
             void accept(Visitor& vis) override {vis.visitIf(*this);}
     };
 
+    class ForExpr : public Expr {
+        std::string varName;
+        public:
+            std::unique_ptr<Expr> start, end, step, body;
+            ForExpr(const std::string& varName, std::unique_ptr<Expr> start, 
+                std::unique_ptr<Expr> end, std::unique_ptr<Expr> step, std::unique_ptr<Expr> body)
+                : varName(std::move(varName)), start(std::move(start)), end(std::move(end)), step(std::move(step)), body(std::move(body)) {}
+            void accept(Visitor& vis) override {vis.visitFor(*this);}
+            const std::string& getVarName() const {return varName;}
+    };
+
     class Prototype {
         std::string name;
         std::vector<std::string> args;

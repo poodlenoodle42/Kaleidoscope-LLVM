@@ -25,6 +25,7 @@ namespace Visitor {
             void visitPrototype(AST::Prototype& proto) override;
             void visitFunction(AST::Function& func) override;
             void visitIf(AST::IfExpr& ifexpr) override;
+            void visitFor(AST::ForExpr& forexpr) override;
 
         public:
             CodeGenerator(llvm::LLVMContext& context);

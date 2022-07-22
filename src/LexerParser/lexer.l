@@ -30,6 +30,8 @@ number      [0-9]
 "if"                    return yy::Parser::make_IF(loc);
 "then"                  return yy::Parser::make_THEN(loc);
 "else"                  return yy::Parser::make_ELSE(loc);
+"for"                   return yy::Parser::make_FOR(loc);
+"in"                    return yy::Parser::make_IN(loc);
 {identifier}            return yy::Parser::make_IDENTIFIER(yytext, loc);
 {number}*\.?{number}*   return yy::Parser::make_NUMBER(std::stod(yytext), loc);
 "+"                     return yy::Parser::make_ADD(loc);

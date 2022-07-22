@@ -54,6 +54,27 @@ namespace Visitor {
         )
     }
 
+    void Printer::visitFor(ForExpr& expr) {
+        PRINT_METHOD(
+            std::cout << "[for " << expr.getVarName() << " init\n";
+            expr.start->accept(*this);
+            printIndent();
+            std::cout << "condition\n";
+            expr.end->accept(*this);
+            printIndent();
+            if (expr.step) {
+                std::cout << "step\n";
+                expr.step->accept(*this);
+                printIndent();
+            } 
+            std::cout << "body\n";
+            expr.body->accept(*this);
+            printIndent();
+            std::cout << "]\n";
+
+        )
+    }
+
     void Printer::visitPrototype(Prototype& proto) {
         PRINT_METHOD(
             std::cout << "[Prototype " << proto.getName() << "(";
