@@ -1,5 +1,5 @@
 #include <iostream>
-#include "CodeGenerationDriver.hpp"
+#include "AOT.hpp"
 #include "CodeGenerator.hpp"
 #include "llvm/Transforms/InstCombine/InstCombine.h"
 #include "llvm/Transforms/Scalar.h"
@@ -14,7 +14,7 @@
 
 static bool isLLVMinit = false;
 
-void CodeGenerationDriver::initLLVM() {
+void AOT::initLLVM() {
     llvm::InitializeAllTargetInfos();
     llvm::InitializeAllTargets();
     llvm::InitializeAllTargetMCs();
@@ -22,14 +22,8 @@ void CodeGenerationDriver::initLLVM() {
     llvm::InitializeAllAsmPrinters();
 }
 
-CodeGenerationDriver::CodeGenerationDriver(const AST::AST& ast) {
-    context = std::make_unique<llvm::LLVMContext>();
-    auto codeGen = Visitor::CodeGenerator(*context);
-    const_cast<AST::AST&>(ast).accept(codeGen);
-    if (codeGen.hadError()) {
-        throw;
-    }
-    moduleToCompile = codeGen.consumeModule();
+AOT::AOT(std::unique_ptr<llvm::Module> module) : moduleToCompile(std::move(module)) {
+
     passManager = std::make_unique<llvm::legacy::PassManager>();
     passManager->add(llvm::createPromoteMemoryToRegisterPass());
     passManager->add(llvm::createInstructionCombiningPass());
@@ -59,11 +53,11 @@ CodeGenerationDriver::CodeGenerationDriver(const AST::AST& ast) {
     moduleToCompile->setTargetTriple(targetTripple);
 }
 
-void CodeGenerationDriver::optimize() {
+void AOT::optimize() {
     passManager->run(*moduleToCompile);
 }
 
-void CodeGenerationDriver::compile(const std::string& filename) {
+void AOT::compile(const std::string& filename) {
     std::error_code ec;
     llvm::raw_fd_ostream dest(filename, ec, llvm::sys::fs::OF_None);
     if (ec) {std::cerr << "Could not open file: " << ec.message(); throw;}
