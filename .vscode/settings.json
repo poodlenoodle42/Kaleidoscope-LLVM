@@ -74,5 +74,11 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp"
+    },
+
+    "cmake.debugConfig": {
+        "args": [
+            "test.kal"
+        ]
     }
 }

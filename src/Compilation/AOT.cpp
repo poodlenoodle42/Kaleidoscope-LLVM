@@ -5,6 +5,7 @@
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Scalar/GVN.h"
 #include "llvm/Transforms/Utils.h"
+#include "llvm/Passes/PassBuilder.h"
 
 #include "llvm/MC/TargetRegistry.h"
 #include "llvm/Support/FileSystem.h"
@@ -22,14 +23,7 @@ void AOT::initLLVM() {
     llvm::InitializeAllAsmPrinters();
 }
 
-AOT::AOT(std::unique_ptr<llvm::Module> module) : moduleToCompile(std::move(module)) {
-
-    passManager = std::make_unique<llvm::legacy::PassManager>();
-    passManager->add(llvm::createPromoteMemoryToRegisterPass());
-    passManager->add(llvm::createInstructionCombiningPass());
-    passManager->add(llvm::createReassociatePass());
-    passManager->add(llvm::createGVNPass());
-    passManager->add(llvm::createCFGSimplificationPass());
+AOT::AOT(std::unique_ptr<llvm::Module> module, std::string cpu) : moduleToCompile(std::move(module)) {
 
     if(!isLLVMinit) {
         initLLVM();
@@ -42,7 +36,6 @@ AOT::AOT(std::unique_ptr<llvm::Module> module) : moduleToCompile(std::move(modul
     if(!t) {std::cerr << error; throw;}
 
 
-    auto cpu = "generic";
     auto features = "";
 
     llvm::TargetOptions opt;
@@ -53,8 +46,32 @@ AOT::AOT(std::unique_ptr<llvm::Module> module) : moduleToCompile(std::move(modul
     moduleToCompile->setTargetTriple(targetTripple);
 }
 
-void AOT::optimize() {
-    passManager->run(*moduleToCompile);
+void AOT::optimize(AOT::OptLevel optLevel) {
+    llvm::ModuleAnalysisManager mam;
+    llvm::LoopAnalysisManager lam;
+    llvm::FunctionAnalysisManager fam;
+    llvm::CGSCCAnalysisManager cam;
+    llvm::PassBuilder passBuilder;
+ 
+    passBuilder.registerModuleAnalyses(mam);
+    passBuilder.registerCGSCCAnalyses(cam);
+    passBuilder.registerFunctionAnalyses(fam);
+    passBuilder.registerLoopAnalyses(lam);
+    passBuilder.crossRegisterProxies(lam, fam, cam, mam);
+    llvm::ModulePassManager modPassManager;
+    if (optLevel == AOT::OptLevel::g) {
+        mam.clear();
+        return;
+    } else if (optLevel == AOT::OptLevel::O1) {
+        modPassManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O1);
+    } else if (optLevel == AOT::OptLevel::O2) {
+        modPassManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O2);
+    } else if (optLevel == AOT::OptLevel::O3) {
+        modPassManager = passBuilder.buildPerModuleDefaultPipeline(llvm::OptimizationLevel::O3);
+    }
+    //modPassManager.printPipeline(llvm::outs(),[](llvm::StringRef ref) {return ref;});
+    modPassManager.run(*moduleToCompile, mam);
+    mam.clear();
 }
 
 void AOT::compile(const std::string& filename) {
@@ -64,7 +81,6 @@ void AOT::compile(const std::string& filename) {
 
     llvm::legacy::PassManager pass;
     auto fileType = llvm::CGFT_ObjectFile;
-
     if(target->addPassesToEmitFile(pass, dest, nullptr, fileType)) {
         std::cerr << "TargetMachine can't emit a file of this type"; throw;
     }
