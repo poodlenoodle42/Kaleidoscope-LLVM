@@ -30,13 +30,8 @@
 // This special exception was added by the Free Software Foundation in
 // version 2.2 of Bison.
 
-/**
- ** \file /home/calvin/Code_Projekts/C++/Kaleidoscope-LLVM/build/src/LexerParser/location.hh
- ** Define the yy::location class.
- */
 
-#ifndef YY_YY_HOME_CALVIN_CODE_PROJEKTS_C_KALEIDOSCOPE_LLVM_BUILD_SRC_LEXERPARSER_LOCATION_HH_INCLUDED
-# define YY_YY_HOME_CALVIN_CODE_PROJEKTS_C_KALEIDOSCOPE_LLVM_BUILD_SRC_LEXERPARSER_LOCATION_HH_INCLUDED
+#pragma once
 
 # include <iostream>
 # include <string>
@@ -54,7 +49,7 @@
 # endif
 
 namespace yy {
-#line 58 "/home/calvin/Code_Projekts/C++/Kaleidoscope-LLVM/build/src/LexerParser/location.hh"
+
 
   /// A point in a source file.
   class position
@@ -299,6 +294,3 @@ namespace yy {
   }
 
 } // yy
-#line 303 "/home/calvin/Code_Projekts/C++/Kaleidoscope-LLVM/build/src/LexerParser/location.hh"
-
-#endif // !YY_YY_HOME_CALVIN_CODE_PROJEKTS_C_KALEIDOSCOPE_LLVM_BUILD_SRC_LEXERPARSER_LOCATION_HH_INCLUDED
