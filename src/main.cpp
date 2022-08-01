@@ -43,7 +43,6 @@ void runJIT(AST::AST& ast) {
 
     Visitor::CodeGenerator codeGen(*context.getContext());
     ast.accept(codeGen);
-    if (codeGen.hadError()) {exit(1);}
     if (auto e = (*jit)->addModule(llvm::orc::ThreadSafeModule(codeGen.consumeModule(),context))) {
         llvm::errs() << "Failed adding module to JIT: "  << e << "\n";
         exit(1);
