@@ -32,7 +32,7 @@ namespace Visitor {
 
     void CodeGenerator::visitVariable(AST::VariableExpr& var) {
         llvm::Value* v = namedValues[var.getName()];
-        if (!v) {LogErrorV("Unknown variable name");}
+        if (!v) {RETURN(LogErrorV("Unknown variable name"));}
         RETURN(llvmBuilder->CreateLoad(llvm::Type::getDoubleTy(llvmContext),v, var.getName().c_str()));
     }
 

@@ -47,8 +47,8 @@ namespace Visitor {
     void Printer::visitVarInit(VarInitExpr& varInit) {
         PRINT_METHOD(
             std::cout << "[VarInit\n";
-            printIndent();
             for (const auto& variable : varInit.varNames) {
+                printIndent();
                 std::cout << "Init " << variable.first;
                 if (variable.second.get() == nullptr) {
                     std::cout << "\n";
@@ -56,8 +56,10 @@ namespace Visitor {
                     std::cout << " with\n";
                     variable.second->accept(*this);
                 }
-                printIndent();
             }
+            printIndent();
+            std::cout << "in\n";
+            varInit.body->accept(*this);
         )
     }
 
