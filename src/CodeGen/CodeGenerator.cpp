@@ -21,9 +21,9 @@ namespace Visitor {
         llvmModule = std::make_unique<llvm::Module>("my cool jit", llvmContext);
     }
 
-    llvm::Value* CodeGenerator::LogErrorV(const char* str) {
+    llvm::Value* CodeGenerator::LogErrorV(yy::location loc, const char* str) {
         error = true;
-        std::cerr << "Error: " << str << "\n";
+        std::cerr << loc << " " <<  str << "\n";
         return nullptr;
     }
     void CodeGenerator::visitNumber(AST::NumberExpr& number) {
@@ -32,7 +32,7 @@ namespace Visitor {
 
     void CodeGenerator::visitVariable(AST::VariableExpr& var) {
         llvm::Value* v = namedValues[var.getName()];
-        if (!v) {RETURN(LogErrorV("Unknown variable name"));}
+        if (!v) {RETURN(LogErrorV(var.getLocation(),"Unknown variable name"));}
         RETURN(llvmBuilder->CreateLoad(llvm::Type::getDoubleTy(llvmContext),v, var.getName().c_str()));
     }
 
@@ -73,7 +73,7 @@ namespace Visitor {
             case AST::BinaryExpr::Type::RET_RIGHT:
                 RETURN(rhs); //Evaluate both but return value of right expression
             default: //Does not happen because node is created in the parser with controlled operators. But if I forget to add a case statement for a new operator ....
-                RETURN(LogErrorV("Unknown binary operator"));
+                RETURN(LogErrorV(binary.getLocation(),"Unknown binary operator"));
         }
     }
 
@@ -81,7 +81,7 @@ namespace Visitor {
         llvm::Value* val = codeGen(*assign.value);
         if (!val) {RETURN(nullptr);}
         llvm::Value* variable = namedValues[assign.getTarget()];
-        if (!variable) {RETURN(LogErrorV("Unknown variable name"));}
+        if (!variable) {RETURN(LogErrorV(assign.getLocation(),"Unknown variable name"));}
         llvmBuilder->CreateStore(val, variable);
         RETURN(val);
 
@@ -97,7 +97,7 @@ namespace Visitor {
                 expr = llvmBuilder->CreateNot(expr, "notboolNegated");
                 RETURN(llvmBuilder->CreateUIToFP(expr, llvm::Type::getDoubleTy(llvmContext)));
             default:
-                RETURN(LogErrorV("Unknown unary operator"));
+                RETURN(LogErrorV(unary.getLocation(),"Unknown unary operator"));
         }
     }
 
@@ -135,9 +135,9 @@ namespace Visitor {
 
     void CodeGenerator::visitCall(AST::CallExpr& call) {
         llvm::Function* calleeF = llvmModule->getFunction(call.getCallee());
-        if(!calleeF) {RETURN(LogErrorV("Unknown function referenced"));}
+        if(!calleeF) {RETURN(LogErrorV(call.getLocation(),"Unknown function referenced"));}
         if(calleeF->arg_size() != call.args.size()) {
-            RETURN(LogErrorV("Incorrect number of arguments parsed"));
+            RETURN(LogErrorV(call.getLocation(),"Incorrect number of arguments parsed"));
         }
         std::vector<llvm::Value*> argsV;
         for(auto& arg : call.args) {
@@ -244,7 +244,7 @@ namespace Visitor {
         llvm::Function* function = llvmModule->getFunction(func.getProto().getName());
         if(!function) {function = codeGen(func.getProto());}
         if(!function) return;
-        if(!function->empty()) {LogErrorV("Function can not be redefined."); return;}
+        if(!function->empty()) {LogErrorV(yy::location(),"Function can not be redefined."); return;}
         llvm::BasicBlock* bb = llvm::BasicBlock::Create(llvmContext, "entry", function);
         llvmBuilder->SetInsertPoint(bb);
         namedValues.clear();
@@ -255,12 +255,17 @@ namespace Visitor {
         }
         if(llvm::Value* retVal = codeGen(*func.body)) {
             llvmBuilder->CreateRet(retVal);
-            error = llvm::verifyFunction(*function);
+            if (!error) {
+                error = llvm::verifyFunction(*function);
+            } else {
+                llvm::verifyFunction(*function);
+            }
             return;
             //RETURN(function);
         }
         //Error with body
-        function->eraseFromParent();
+        function->removeFromParent();
+        codeGen(func.getProto());
         
     }
 

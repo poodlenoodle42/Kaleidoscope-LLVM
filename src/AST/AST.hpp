@@ -12,7 +12,7 @@ namespace AST {
             std::vector<ProtoPtr> externFunctions;
             std::vector<FuncPtr> functions;
         public:
-            AST() : topLevelFunction(new Function(std::make_unique<Prototype>("main", std::vector<std::string>()), std::make_unique<NumberExpr>(0.0))) {}
+            AST() : topLevelFunction(new Function(std::make_unique<Prototype>("main", std::vector<std::string>()), std::make_unique<NumberExpr>(yy::location(),0.0))) {}
             void addTopLevel(ExprPtr expr) {topLevelFunction->body = std::move(expr);}
             void addExternalFunction(ProtoPtr proto) {externFunctions.push_back(std::move(proto));}
             void addFunction(FuncPtr func) {functions.push_back(std::move(func));}

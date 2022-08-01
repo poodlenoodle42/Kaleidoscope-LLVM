@@ -78,7 +78,8 @@
 
     "cmake.debugConfig": {
         "args": [
-            "error_test.kal"
+            "error_test.kal",
+            "-jit"
         ]
     }
 }

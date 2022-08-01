@@ -13,7 +13,7 @@ namespace Visitor {
             llvm::LLVMContext& llvmContext;
             std::unique_ptr<llvm::Module> llvmModule;
             bool error = false;
-            llvm::Value* LogErrorV(const char* str);
+            llvm::Value* LogErrorV(yy::location loc, const char* str);
             inline llvm::Value* codeGen(const AST::Expr& expr) {const_cast<AST::Expr&>(expr).accept(*this); auto v = returnValues.top(); returnValues.pop(); return v;}
             inline llvm::Function* codeGen(const AST::Prototype& prot) {const_cast<AST::Prototype&>(prot).accept(*this); auto v = llvm::cast<llvm::Function>(returnValues.top()); returnValues.pop(); return v;}
             inline llvm::AllocaInst* createEntryBlockAlloca(llvm::Function* function, const std::string& varName) {

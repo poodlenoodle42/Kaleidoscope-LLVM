@@ -5,10 +5,14 @@
 #include <iostream>
 #include <utility>
 #include "Visitor.hpp"
+#include "location.hh"
 namespace AST {
-
     class Expr {
+        yy::location location;
         public:
+            Expr(yy::location loc) : location(loc) {};
+            Expr() {};
+            inline yy::location getLocation() const {return location;}
             virtual ~Expr() {}
             virtual void accept(Visitor& vis) = 0;
         
@@ -17,7 +21,7 @@ namespace AST {
     class NumberExpr : public Expr {
         double val;
         public: 
-            NumberExpr(double val) : val(val) {}
+            NumberExpr(yy::location loc, double val) : Expr(loc), val(val) {}
             void accept(Visitor& vis) override {vis.visitNumber(*this);}
             double getVal() const {return val;}
     };
@@ -26,7 +30,7 @@ namespace AST {
         std::string name;
 
         public:
-            VariableExpr(const std::string&& name) : name(name) {}
+            VariableExpr(yy::location loc, const std::string&& name) : Expr(loc), name(name) {}
             void accept(Visitor& vis) override {vis.visitVariable(*this);}
             const std::string& getName() const {return name;}
     };
@@ -49,7 +53,7 @@ namespace AST {
             Type op;
         public:
             std::unique_ptr<Expr> LHS, RHS;
-            BinaryExpr(Type op, std::unique_ptr<Expr> LHS, std::unique_ptr<Expr> RHS) : op(op), RHS(std::move(RHS)), LHS(std::move(LHS)) {}
+            BinaryExpr(yy::location loc, Type op, std::unique_ptr<Expr> LHS, std::unique_ptr<Expr> RHS) : Expr(loc), op(op), RHS(std::move(RHS)), LHS(std::move(LHS)) {}
             void accept(Visitor& vis) override {vis.visitBinary(*this);} 
             Type getOp() const {return op;}  
     };
@@ -58,8 +62,8 @@ namespace AST {
         std::string target;
         public:
             std::unique_ptr<Expr> value;
-            AssignExpr(const std::string& target, std::unique_ptr<Expr> value)
-                : target(std::move(target)), value(std::move(value)) {}
+            AssignExpr(yy::location loc, const std::string& target, std::unique_ptr<Expr> value)
+                : Expr(loc), target(std::move(target)), value(std::move(value)) {}
             void accept(Visitor& vis) override {vis.visitAssign(*this);}
             const std::string& getTarget() const {return target;}
     };
@@ -74,7 +78,7 @@ namespace AST {
             Type op;
         public:
             std::unique_ptr<Expr> expr;
-            UnaryExpr(Type op, std::unique_ptr<Expr> expr) : op(op), expr(std::move(expr)) {}
+            UnaryExpr(yy::location loc, Type op, std::unique_ptr<Expr> expr) : Expr(loc), op(op), expr(std::move(expr)) {}
             void accept(Visitor& vis) override {vis.visitUnary(*this);}
             Type getOp() const {return op;}
     };
@@ -83,8 +87,8 @@ namespace AST {
         public:
             std::vector<std::pair<std::string, std::unique_ptr<Expr>>> varNames;
             std::unique_ptr<Expr> body;
-            VarInitExpr(std::vector<std::pair<std::string, std::unique_ptr<Expr>>> varNames, std::unique_ptr<Expr> body) 
-                : varNames(std::move(varNames)), body(std::move(body)) {}
+            VarInitExpr(yy::location loc, std::vector<std::pair<std::string, std::unique_ptr<Expr>>> varNames, std::unique_ptr<Expr> body) 
+                : Expr(loc), varNames(std::move(varNames)), body(std::move(body)) {}
             void accept(Visitor& vis) {vis.visitVarInit(*this);}
     };
 
@@ -93,7 +97,7 @@ namespace AST {
         
         public:
             std::vector<std::unique_ptr<Expr>> args;
-            CallExpr(const std::string&& callee, std::vector<std::unique_ptr<Expr>>&& args) : callee(callee), args(std::move(args)) {}
+            CallExpr(yy::location loc, const std::string&& callee, std::vector<std::unique_ptr<Expr>>&& args) : Expr(loc), callee(callee), args(std::move(args)) {}
             void accept(Visitor& vis) override {vis.visitCall(*this);}
             void addExpr(std::unique_ptr<Expr> expr) {args.push_back(std::move(expr));}
             const std::string& getCallee() const {return callee;}
@@ -103,7 +107,7 @@ namespace AST {
     class IfExpr : public Expr {
         public:
             std::unique_ptr<Expr> cond, then, Else;
-            IfExpr(std::unique_ptr<Expr> cond, std::unique_ptr<Expr> then, std::unique_ptr<Expr> Else) : cond(std::move(cond)), then(std::move(then)), Else(std::move(Else)) {}
+            IfExpr(yy::location loc, std::unique_ptr<Expr> cond, std::unique_ptr<Expr> then, std::unique_ptr<Expr> Else) : Expr(loc), cond(std::move(cond)), then(std::move(then)), Else(std::move(Else)) {}
             void accept(Visitor& vis) override {vis.visitIf(*this);}
     };
 
@@ -111,9 +115,9 @@ namespace AST {
         std::string varName;
         public:
             std::unique_ptr<Expr> start, end, step, body;
-            ForExpr(const std::string& varName, std::unique_ptr<Expr> start, 
+            ForExpr(yy::location loc, const std::string& varName, std::unique_ptr<Expr> start, 
                 std::unique_ptr<Expr> end, std::unique_ptr<Expr> step, std::unique_ptr<Expr> body)
-                : varName(std::move(varName)), start(std::move(start)), end(std::move(end)), step(std::move(step)), body(std::move(body)) {}
+                : Expr(loc), varName(std::move(varName)), start(std::move(start)), end(std::move(end)), step(std::move(step)), body(std::move(body)) {}
             void accept(Visitor& vis) override {vis.visitFor(*this);}
             const std::string& getVarName() const {return varName;}
     };

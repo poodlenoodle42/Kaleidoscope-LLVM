@@ -10,6 +10,7 @@
 %define api.token.raw //Disables conversion between internal and external token numbers, charachter tokens like '+' can not be created anymore
 %define parse.assert //Checks that symbols are constructed and destroyed properly, uses RTTI
 %define api.parser.class { Parser }
+%define api.location.file "location.hh"
 
 %code requires {
     #include <string>
@@ -40,7 +41,7 @@
         return scanner.get_next_token();
     }
 
-    #define ERROR_EXPR std::make_unique<AST::NumberExpr>(0.0)
+    #define ERROR_EXPR std::make_unique<AST::NumberExpr>(yy::location(),0.0)
 }
 
 %token DEF EXTERN 
@@ -87,32 +88,32 @@ top_level_item:
 
 
 expr:
-  "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>($2,$4, $6);}
-| "for" IDENTIFIER "=" expr "," expr "in" expr          {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, nullptr, $8);}
-| "for" IDENTIFIER "=" error "," expr "in" expr         {$$ = std::make_unique<AST::ForExpr>($2, ERROR_EXPR, $6, nullptr, $8);}
-| "for" IDENTIFIER "=" error "," expr "in" error        {$$ = std::make_unique<AST::ForExpr>($2, ERROR_EXPR, $6, nullptr, ERROR_EXPR);}
-| "for" IDENTIFIER "=" expr "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>($2, $4, $6, $8, $10);}
-| "for" IDENTIFIER "=" error "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>($2, ERROR_EXPR, $6, $8, $10);}
-| "var" varList "in" expr {$$ = std::make_unique<AST::VarInitExpr>($2,$4);}                           
-| expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::PLUS, $1, $3);}
-| expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MINUS, $1, $3);}
-| expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::MULT, $1, $3);}
-| expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::DIV, $1, $3);}
-| expr "<" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::LESS, $1, $3);}
-| expr ">" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::GREATER, $1, $3);}
-| expr "|" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::OR, $1, $3);}
-| expr "&" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::AND, $1, $3);}
-| expr "==" expr    {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::EQUALS, $1, $3);}
-| expr ":" expr     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::RET_RIGHT, $1, $3);}
-| expr ":" error     {$$ = std::make_unique<AST::BinaryExpr>(AST::BinaryExpr::Type::RET_RIGHT, $1, ERROR_EXPR);}
-| "-" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NEGATE, $2);} //Should introduce negate expression node later
-| "!" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(AST::UnaryExpr::Type::NOT, $2);}
-| IDENTIFIER "=" expr  {$$ = std::make_unique<AST::AssignExpr>($1, $3);}
-| IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>($1, $3);}
+  "if" expr "then" expr "else" expr {$$ = std::make_unique<AST::IfExpr>(@$,$2,$4, $6);}
+| "for" IDENTIFIER "=" expr "," expr "in" expr          {$$ = std::make_unique<AST::ForExpr>(@$,$2, $4, $6, nullptr, $8);}
+| "for" IDENTIFIER "=" error "," expr "in" expr         {$$ = std::make_unique<AST::ForExpr>(@$,$2, ERROR_EXPR, $6, nullptr, $8);}
+| "for" IDENTIFIER "=" error "," expr "in" error        {$$ = std::make_unique<AST::ForExpr>(@$,$2, ERROR_EXPR, $6, nullptr, ERROR_EXPR);}
+| "for" IDENTIFIER "=" expr "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>(@$,$2, $4, $6, $8, $10);}
+| "for" IDENTIFIER "=" error "," expr "," expr "in" expr {$$ = std::make_unique<AST::ForExpr>(@$,$2, ERROR_EXPR, $6, $8, $10);}
+| "var" varList "in" expr {$$ = std::make_unique<AST::VarInitExpr>(@$,$2,$4);}                           
+| expr "+" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::PLUS, $1, $3);}
+| expr "-" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::MINUS, $1, $3);}
+| expr "*" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::MULT, $1, $3);}
+| expr "/" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::DIV, $1, $3);}
+| expr "<" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::LESS, $1, $3);}
+| expr ">" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::GREATER, $1, $3);}
+| expr "|" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::OR, $1, $3);}
+| expr "&" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::AND, $1, $3);}
+| expr "==" expr    {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::EQUALS, $1, $3);}
+| expr ":" expr     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::RET_RIGHT, $1, $3);}
+| expr ":" error     {$$ = std::make_unique<AST::BinaryExpr>(@$,AST::BinaryExpr::Type::RET_RIGHT, $1, ERROR_EXPR);}
+| "-" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(@$,AST::UnaryExpr::Type::NEGATE, $2);} //Should introduce negate expression node later
+| "!" expr %prec UNARY {$$ = std::make_unique<AST::UnaryExpr>(@$,AST::UnaryExpr::Type::NOT, $2);}
+| IDENTIFIER "=" expr  {$$ = std::make_unique<AST::AssignExpr>(@$,$1, $3);}
+| IDENTIFIER "(" arglist ")" {$$ = std::make_unique<AST::CallExpr>(@$,$1, $3);}
 | "(" expr ")"      {$$ = $2;}
 | "(" error ")"     {$$ = ERROR_EXPR;}
-| IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>($1);}
-| NUMBER            {$$ = std::make_unique<AST::NumberExpr>($1);}
+| IDENTIFIER        {$$ = std::make_unique<AST::VariableExpr>(@$,$1);}
+| NUMBER            {$$ = std::make_unique<AST::NumberExpr>(@$,$1);}
 //| top_level_expr    {$$ = $1;} //Expressions allowed on the top level are of course also allowed anywhere else
 ;
 
