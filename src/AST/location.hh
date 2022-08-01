@@ -30,8 +30,13 @@
 // This special exception was added by the Free Software Foundation in
 // version 2.2 of Bison.
 
+/**
+ ** \file location.hh
+ ** Define the yy::location class.
+ */
 
-#pragma once
+#ifndef YY_YY_LOCATION_HH_INCLUDED
+# define YY_YY_LOCATION_HH_INCLUDED
 
 # include <iostream>
 # include <string>
@@ -294,3 +299,6 @@ namespace yy {
   }
 
 } // yy
+
+
+#endif // !YY_YY_LOCATION_HH_INCLUDED

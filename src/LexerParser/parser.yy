@@ -10,9 +10,9 @@
 %define api.token.raw //Disables conversion between internal and external token numbers, charachter tokens like '+' can not be created anymore
 %define parse.assert //Checks that symbols are constructed and destroyed properly, uses RTTI
 %define api.parser.class { Parser }
-%define api.location.file "location.hh"
 
 %code requires {
+    #include <location.hh>
     #include <string>
     #include <iostream>
 
@@ -24,6 +24,7 @@
     class ParserDriver;
     namespace yy {class Scanner;}
 }
+%define api.location.type {yy::location}
 %lex-param {yy::Scanner& scanner}
 %parse-param {ParserDriver& drv} //Pass the driver as a parameter to yyparse so he can be used in semantic actions
 %parse-param {Scanner& scanner}
@@ -31,6 +32,7 @@
 %define parse.trace
 %define parse.error detailed
 %define parse.lac full
+
 
 %code {
     #include "ParserDriver.hpp"
